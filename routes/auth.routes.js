@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const router = new Router();
 const User = require('../models/User.model');
+const { isLoggedIn, isLoggedOut } = require('../middleware/route-guard.js');
 
 const bcryptjs = require('bcryptjs');
 const saltRounds = 10;
@@ -38,7 +39,7 @@ router.post('/login', (req, res, next) => {
     res.render('auth/login', {
       errorMessage: 'Please enter both, username and password to login.'
     });
-    return;
+    return
   }
  
   User.findOne({ username })
@@ -57,9 +58,29 @@ router.post('/login', (req, res, next) => {
 })
 
 //user routes
-router.get('/userProfile', (req, res) => {
+router.get('/userProfile', isLoggedIn, (req, res) => {
   res.render('users/user-profile', { userInSession: req.session.currentUser });
 })
+
+//main
+router.get("/main", (req, res, next) => {
+  if(req.session.currentUser){
+    res.render("main", {user: req.session.currentUser, loggedIn: true});
+  }
+  else {
+    res.redirect("/")
+  }
+})
+
+//private
+router.get("/private", (req, res, next) => {
+  if(req.session.currentUser ){
+    res.render("private", {user: req.session.currentUser, loggedIn: true});
+  }
+  else {
+    res.redirect("/")
+  }
+});
 
 router.post('/logout', (req, res, next) => {
   req.session.destroy(err => {
